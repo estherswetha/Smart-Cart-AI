@@ -1,0 +1,27 @@
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Secrets
+.env
+.env.*
+
+# Databases
+*.db
+*.sqlite
+*.sqlite3
+instance/
+
+# Generated files
+backups/
+exports/
+invoices/
+
+# Testing
+.pytest_cache/
+
+# IDE
+.vscode/

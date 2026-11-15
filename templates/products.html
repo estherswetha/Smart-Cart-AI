@@ -1,0 +1,860 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Product Management | SmartCart AI</title>
+
+    <link
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+        rel="stylesheet"
+    >
+
+    <style>
+        :root {
+            --primary: #6c5ce7;
+            --dark: #201b3c;
+            --background: #f5f6fc;
+        }
+
+        body {
+            background: var(--background);
+            color: #282641;
+            font-family: Arial, sans-serif;
+        }
+
+        .sidebar {
+            min-height: 100vh;
+            background: var(--dark);
+            color: white;
+            padding: 28px 18px;
+        }
+
+        .brand {
+            font-size: 23px;
+            font-weight: 800;
+            margin-bottom: 35px;
+        }
+
+        .sidebar a {
+            display: block;
+            padding: 13px;
+            color: #ddd9f6;
+            text-decoration: none;
+            border-radius: 10px;
+            margin-bottom: 8px;
+        }
+
+        .sidebar a:hover,
+        .sidebar a.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        .main-content {
+            padding: 30px;
+        }
+
+        .panel {
+            background: white;
+            border-radius: 18px;
+            padding: 22px;
+            box-shadow: 0 5px 25px rgba(35, 30, 80, 0.05);
+            margin-bottom: 22px;
+        }
+
+        .stat-card {
+            border: none;
+            border-radius: 16px;
+            padding: 22px;
+            height: 100%;
+        }
+
+        .stat-value {
+            font-size: 30px;
+            font-weight: 800;
+        }
+
+        .primary-button {
+            background: var(--primary);
+            color: white;
+            border: none;
+        }
+
+        .primary-button:hover {
+            background: #5745d1;
+            color: white;
+        }
+
+        .form-control,
+        .form-select {
+            padding: 11px;
+            border-radius: 10px;
+        }
+
+        .table th {
+            color: #77738e;
+            font-size: 12px;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+
+        .table td {
+            vertical-align: middle;
+        }
+
+        .product-name {
+            font-weight: 700;
+        }
+
+        .stock-low {
+            color: #d63031;
+            font-weight: 700;
+        }
+
+        .stock-ok {
+            color: #00875a;
+            font-weight: 700;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .section-title {
+            font-weight: 800;
+        }
+
+        @media (max-width: 767px) {
+            .sidebar {
+                min-height: auto;
+            }
+
+            .main-content {
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+
+<h1>Product Management</h1>
+
+<h2>Add New Product</h2>
+
+<form action="/products/add" method="POST">
+
+    <label>Product Name:</label>
+    <input type="text" name="name" required>
+    <br><br>
+
+    <label>Barcode:</label>
+    <input type="text" name="barcode">
+    <br><br>
+
+    <label>Category:</label>
+    <select name="category_id">
+        <option value="">Select Category</option>
+        {% for category in categories %}
+        <option value="{{ category['id'] }}">
+            {{ category['name'] }}
+        </option>
+        {% endfor %}
+    </select>
+    <br><br>
+
+    <label>Unit:</label>
+    <input type="text" name="unit" value="pcs" required>
+    <br><br>
+
+    <label>Purchase Price:</label>
+    <input type="number" name="purchase_price"
+           min="0" step="0.01" required>
+    <br><br>
+
+    <label>Selling Price:</label>
+    <input type="number" name="selling_price"
+           min="0" step="0.01" required>
+    <br><br>
+
+    <label>Stock Quantity:</label>
+    <input type="number" name="stock"
+           min="0" step="1" value="0" required>
+    <br><br>
+
+    <label>Reorder Level:</label>
+    <input type="number" name="reorder_level"
+           min="0" step="1" value="5" required>
+    <br><br>
+
+    <label>Tax Rate (%):</label>
+    <input type="number" name="tax_rate"
+           min="0" step="0.01" value="0" required>
+    <br><br>
+
+    <label>Expiry Date:</label>
+    <input type="date" name="expiry_date">
+    <br><br>
+
+    <button type="submit">Add Product</button>
+
+</form>
+<body>
+
+<div class="container-fluid">
+    <div class="row">
+
+        <!-- SIDEBAR -->
+        <aside class="col-md-2 sidebar">
+            <div class="brand">🛒 SmartCart AI</div>
+
+            <a href="{{ url_for('home') }}">🏠 Dashboard</a>
+            <a href="{{ url_for('home') }}">🧾 New Billing</a>
+            <a href="{{ url_for('manage_products') }}" class="active">
+                📦 Products
+            </a>
+
+            <hr>
+
+            <small class="text-white-50">
+                Smart Shopping Management
+            </small>
+        </aside>
+
+        <!-- MAIN CONTENT -->
+        <main class="col-md-10 main-content">
+
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+                <div>
+                    <h2 class="section-title">Product Management</h2>
+                    <p class="text-secondary mb-0">
+                        Add, edit, search, and manage your inventory.
+                    </p>
+                </div>
+
+                <button
+                    class="btn primary-button px-4 py-3"
+                    data-bs-toggle="modal"
+                    data-bs-target="#productModal"
+                    onclick="prepareAdd()"
+                >
+                    + Add New Product
+                </button>
+            </div>
+
+            <!-- FLASH MESSAGES -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert
+                            {% if category == 'success' %}
+                                alert-success
+                            {% else %}
+                                alert-danger
+                            {% endif %}
+                            alert-dismissible fade show">
+                            {{ message }}
+                            <button
+                                type="button"
+                                class="btn-close"
+                                data-bs-dismiss="alert"
+                            ></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <!-- SUMMARY CARDS -->
+            <div class="row g-3 mb-4">
+
+                <div class="col-md-4">
+                    <div class="card stat-card">
+                        <div class="text-secondary">Active Products</div>
+                        <div class="stat-value">{{ products|length }}</div>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="card stat-card">
+                        <div class="text-secondary">Low Stock Products</div>
+                        <div class="stat-value text-danger" id="lowStockCount">0</div>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="card stat-card">
+                        <div class="text-secondary">Inventory Units</div>
+                        <div class="stat-value" id="totalStock">0</div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- INVENTORY TABLE -->
+            <div class="panel">
+
+                <div class="row g-3 mb-4">
+
+                    <div class="col-md-5">
+                        <input
+                            type="search"
+                            id="searchInput"
+                            class="form-control"
+                            placeholder="🔍 Search product name or barcode..."
+                        >
+                    </div>
+
+                    <div class="col-md-4">
+                        <select id="categoryFilter" class="form-select">
+                            <option value="">All Categories</option>
+
+                            {% for category in categories %}
+                                <option value="{{ category.name|lower }}">
+                                    {{ category.name }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="col-md-3">
+                        <select id="stockFilter" class="form-select">
+                            <option value="">All Stock Levels</option>
+                            <option value="low">Low Stock</option>
+                            <option value="available">In Stock</option>
+                            <option value="out">Out of Stock</option>
+                        </select>
+                    </div>
+
+                </div>
+
+                <div class="table-responsive">
+
+                    <table class="table table-hover align-middle">
+
+                        <thead>
+                            <tr>
+                                <th>Product</th>
+                                <th>Barcode</th>
+                                <th>Category</th>
+                                <th>Purchase</th>
+                                <th>Selling</th>
+                                <th>Stock</th>
+                                <th>GST</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+
+                        <tbody id="productTable">
+
+                            {% for p in products %}
+
+                            <tr
+                                class="product-row"
+                                data-name="{{ p.name|lower }}"
+                                data-barcode="{{ (p.barcode or '')|lower }}"
+                                data-category="{{ (p.category_id or '') }}"
+                                data-stock="{{ p.stock|int }}"
+                                data-reorder="{{ p.reorder_level|int }}"
+                                data-category-name="{% for c in categories %}{% if c.id == p.category_id %}{{ c.name|lower }}{% endif %}{% endfor %}"
+                            >
+
+                                <td>
+                                    <div class="product-name">
+                                        {{ p.name }}
+                                    </div>
+
+                                    <small class="text-secondary">
+                                        {{ p.unit }}
+                                    </small>
+                                </td>
+
+                                <td>{{ p.barcode or "—" }}</td>
+
+                                <td>
+                                    {% for c in categories %}
+                                        {% if c.id == p.category_id %}
+                                            {{ c.name }}
+                                        {% endif %}
+                                    {% endfor %}
+                                </td>
+
+                                <td>₹{{ "%.2f"|format(p.purchase_price|float) }}</td>
+
+                                <td>
+                                    <strong>
+                                        ₹{{ "%.2f"|format(p.selling_price|float) }}
+                                    </strong>
+                                </td>
+
+                                <td>
+                                    <span class="stock-label">
+                                        {{ p.stock }}
+                                    </span>
+                                </td>
+
+                                <td>{{ p.tax_rate }}%</td>
+
+                                <td>
+                                    <div class="action-buttons">
+
+                                        <button
+                                            type="button"
+                                            class="btn btn-sm btn-outline-primary"
+                                            onclick='prepareEdit(
+                                                {{ {
+                                                    "id": p.id,
+                                                    "name": p.name,
+                                                    "barcode": p.barcode or "",
+                                                    "category_id": p.category_id or "",
+                                                    "unit": p.unit or "piece",
+                                                    "purchase_price": p.purchase_price,
+                                                    "selling_price": p.selling_price,
+                                                    "stock": p.stock,
+                                                    "reorder_level": p.reorder_level,
+                                                    "tax_rate": p.tax_rate,
+                                                    "expiry_date": p.expiry_date or ""
+                                                }|tojson }}
+                                            )'
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#productModal"
+                                        >
+                                            Edit
+                                        </button>
+
+                                        <button
+                                            type="button"
+                                            class="btn btn-sm btn-outline-success"
+                                            onclick="prepareStockIn({{ p.id }}, '{{ p.name|e }}')"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#stockModal"
+                                        >
+                                            + Stock
+                                        </button>
+
+                                        <form
+                                            method="POST"
+                                            action="{{ url_for('delete_product', product_id=p.id) }}"
+                                            onsubmit="return confirm('Remove {{ p.name|e }} from active products? Historical bills will be retained.');"
+                                        >
+                                            <button class="btn btn-sm btn-outline-danger">
+                                                Delete
+                                            </button>
+                                        </form>
+
+                                    </div>
+                                </td>
+
+                            </tr>
+
+                            {% else %}
+
+                            <tr>
+                                <td colspan="8" class="text-center py-5">
+                                    No products found. Add your first product!
+                                </td>
+                            </tr>
+
+                            {% endfor %}
+
+                        </tbody>
+
+                    </table>
+
+                    <div id="noResults" class="text-center text-secondary py-4" hidden>
+                        No matching products found.
+                    </div>
+
+                </div>
+
+            </div>
+
+        </main>
+    </div>
+</div>
+
+
+<!-- ADD / EDIT PRODUCT MODAL -->
+
+<div class="modal fade" id="productModal" tabindex="-1">
+
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+
+        <div class="modal-content border-0 rounded-4">
+
+            <form id="productForm" method="POST">
+
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold" id="modalTitle">
+                        Add New Product
+                    </h5>
+
+                    <button
+                        type="button"
+                        class="btn-close"
+                        data-bs-dismiss="modal"
+                    ></button>
+                </div>
+
+                <div class="modal-body">
+
+                    <div class="row g-3">
+
+                        <div class="col-md-6">
+                            <label class="form-label">Product Name *</label>
+                            <input
+                                class="form-control"
+                                name="name"
+                                id="name"
+                                maxlength="150"
+                                required
+                            >
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Barcode</label>
+                            <input
+                                class="form-control"
+                                name="barcode"
+                                id="barcode"
+                            >
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Category</label>
+                            <select
+                                class="form-select"
+                                name="category_id"
+                                id="category_id"
+                            >
+                                <option value="">Uncategorized</option>
+
+                                {% for c in categories %}
+                                    <option value="{{ c.id }}">
+                                        {{ c.name }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Unit</label>
+                            <select class="form-select" name="unit" id="unit">
+                                <option value="piece">Piece</option>
+                                <option value="kg">Kilogram</option>
+                                <option value="g">Gram</option>
+                                <option value="litre">Litre</option>
+                                <option value="ml">Millilitre</option>
+                                <option value="packet">Packet</option>
+                                <option value="box">Box</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Purchase Price (₹) *</label>
+                            <input
+                                class="form-control"
+                                type="number"
+                                name="purchase_price"
+                                id="purchase_price"
+                                min="0"
+                                step="0.01"
+                                required
+                            >
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Selling Price (₹) *</label>
+                            <input
+                                class="form-control"
+                                type="number"
+                                name="selling_price"
+                                id="selling_price"
+                                min="0"
+                                step="0.01"
+                                required
+                            >
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label">Available Stock *</label>
+                            <input
+                                class="form-control"
+                                type="number"
+                                name="stock"
+                                id="stock"
+                                min="0"
+                                step="1"
+                                required
+                            >
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label">Reorder Level</label>
+                            <input
+                                class="form-control"
+                                type="number"
+                                name="reorder_level"
+                                id="reorder_level"
+                                min="0"
+                                value="10"
+                            >
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label">GST Rate (%)</label>
+                            <select class="form-select" name="tax_rate" id="tax_rate">
+                                <option value="0">0%</option>
+                                <option value="5">5%</option>
+                                <option value="12">12%</option>
+                                <option value="18">18%</option>
+                                <option value="28">28%</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Expiry Date</label>
+                            <input
+                                class="form-control"
+                                type="date"
+                                name="expiry_date"
+                                id="expiry_date"
+                            >
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <div class="modal-footer">
+                    <button
+                        type="button"
+                        class="btn btn-light"
+                        data-bs-dismiss="modal"
+                    >
+                        Cancel
+                    </button>
+
+                    <button class="btn primary-button px-4" type="submit">
+                        Save Product
+                    </button>
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- STOCK IN MODAL -->
+
+<div class="modal fade" id="stockModal" tabindex="-1">
+
+    <div class="modal-dialog modal-dialog-centered">
+
+        <div class="modal-content border-0 rounded-4">
+
+            <form id="stockForm" method="POST">
+
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold">Receive New Stock</h5>
+
+                    <button
+                        type="button"
+                        class="btn-close"
+                        data-bs-dismiss="modal"
+                    ></button>
+                </div>
+
+                <div class="modal-body">
+
+                    <p id="stockProductName" class="text-secondary"></p>
+
+                    <label class="form-label">Quantity Received</label>
+
+                    <input
+                        class="form-control"
+                        type="number"
+                        name="quantity"
+                        min="1"
+                        step="1"
+                        required
+                    >
+
+                </div>
+
+                <div class="modal-footer">
+                    <button
+                        type="button"
+                        class="btn btn-light"
+                        data-bs-dismiss="modal"
+                    >
+                        Cancel
+                    </button>
+
+                    <button class="btn btn-success" type="submit">
+                        Update Stock
+                    </button>
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+    const productForm = document.getElementById("productForm");
+
+    function prepareAdd() {
+        productForm.action = "{{ url_for('add_product') }}";
+        productForm.reset();
+
+        document.getElementById("modalTitle").textContent =
+            "Add New Product";
+
+        document.getElementById("reorder_level").value = 10;
+        document.getElementById("tax_rate").value = "0";
+    }
+
+    function prepareEdit(product) {
+        productForm.action = `/products/edit/${product.id}`;
+
+        document.getElementById("modalTitle").textContent =
+            "Edit Product";
+
+        for (const field of [
+            "name",
+            "barcode",
+            "category_id",
+            "unit",
+            "purchase_price",
+            "selling_price",
+            "stock",
+            "reorder_level",
+            "tax_rate",
+            "expiry_date"
+        ]) {
+            const element = document.getElementById(field);
+
+            if (element) {
+                element.value = product[field] ?? "";
+            }
+        }
+    }
+
+    function prepareStockIn(productId, productName) {
+        document.getElementById("stockForm").action =
+            `/products/stock-in/${productId}`;
+
+        document.getElementById("stockProductName").textContent =
+            `Product: ${productName}`;
+    }
+
+    // Search, category filter and stock filter.
+    function filterProducts() {
+        const search = document
+            .getElementById("searchInput")
+            .value
+            .trim()
+            .toLowerCase();
+
+        const category = document
+            .getElementById("categoryFilter")
+            .value;
+
+        const stockFilter = document
+            .getElementById("stockFilter")
+            .value;
+
+        const rows = document.querySelectorAll(".product-row");
+
+        let visibleCount = 0;
+        let lowStockCount = 0;
+        let totalStock = 0;
+
+        rows.forEach(row => {
+            const name = row.dataset.name || "";
+            const barcode = row.dataset.barcode || "";
+            const categoryName = row.dataset.categoryName || "";
+
+            const stock = Number(row.dataset.stock || 0);
+            const reorder = Number(row.dataset.reorder || 0);
+
+            totalStock += stock;
+
+            if (stock <= reorder) {
+                lowStockCount++;
+            }
+
+            const matchesSearch =
+                name.includes(search) || barcode.includes(search);
+
+            const matchesCategory =
+                !category || categoryName === category;
+
+            let matchesStock = true;
+
+            if (stockFilter === "low") {
+                matchesStock = stock > 0 && stock <= reorder;
+            } else if (stockFilter === "available") {
+                matchesStock = stock > 0;
+            } else if (stockFilter === "out") {
+                matchesStock = stock === 0;
+            }
+
+            const visible =
+                matchesSearch && matchesCategory && matchesStock;
+
+            row.hidden = !visible;
+
+            if (visible) {
+                visibleCount++;
+            }
+
+            const stockLabel = row.querySelector(".stock-label");
+
+            if (stockLabel) {
+                stockLabel.className =
+                    stock <= reorder
+                        ? "stock-label stock-low"
+                        : "stock-label stock-ok";
+            }
+        });
+
+        document.getElementById("lowStockCount").textContent =
+            lowStockCount;
+
+        document.getElementById("totalStock").textContent =
+            totalStock;
+
+        document.getElementById("noResults").hidden =
+            visibleCount !== 0;
+    }
+
+    document
+        .getElementById("searchInput")
+        .addEventListener("input", filterProducts);
+
+    document
+        .getElementById("categoryFilter")
+        .addEventListener("change", filterProducts);
+
+    document
+        .getElementById("stockFilter")
+        .addEventListener("change", filterProducts);
+
+    filterProducts();
+</script>
+
+</body>
+</html>

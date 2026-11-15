@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Shop Management | SmartCart AI</title>
+
+    <link
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+        rel="stylesheet"
+    >
+
+    <style>
+        body {
+            background: #f5f6fc;
+            font-family: Arial, sans-serif;
+            color: #282641;
+        }
+
+        .sidebar {
+            min-height: 100vh;
+            background: #201b3c;
+            padding: 25px 16px;
+            color: white;
+        }
+
+        .brand {
+            font-size: 22px;
+            font-weight: 800;
+            margin-bottom: 30px;
+        }
+
+        .sidebar a {
+            display: block;
+            color: #ddd9f6;
+            text-decoration: none;
+            padding: 12px;
+            margin-bottom: 8px;
+            border-radius: 9px;
+        }
+
+        .sidebar a:hover,
+        .sidebar a.active {
+            background: #6c5ce7;
+            color: white;
+        }
+
+        .main-content {
+            padding: 30px;
+        }
+
+        .panel,
+        .stat-card {
+            background: white;
+            border: 0;
+            border-radius: 17px;
+            padding: 22px;
+            box-shadow: 0 5px 25px rgba(35, 30, 80, 0.05);
+        }
+
+        .stat-number {
+            font-size: 28px;
+            font-weight: 800;
+        }
+
+        .form-control,
+        .form-select {
+            padding: 10px;
+            border-radius: 9px;
+        }
+
+        .primary-button {
+            background: #6c5ce7;
+            border: none;
+            color: white;
+        }
+
+        .primary-button:hover {
+            background: #5745d1;
+            color: white;
+        }
+
+        .section-title {
+            font-weight: 800;
+        }
+
+        .table th {
+            white-space: nowrap;
+            color: #77738e;
+            font-size: 12px;
+            text-transform: uppercase;
+        }
+
+        @media (max-width: 767px) {
+            .sidebar {
+                min-height: auto;
+            }
+
+            .main-content {
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container-fluid">
+    <div class="row">
+
+        <aside class="col-md-2 sidebar">
+            <div class="brand">🛒 SmartCart AI</div>
+
+            <a href="{{ url_for('home') }}">🏠 Dashboard</a>
+            <a href="{{ url_for('home') }}">🧾 Billing</a>
+            <a href="{{ url_for('manage_products') }}">📦 Products</a>
+            <a href="{{ url_for('shop_management') }}" class="active">
+                🚚 Suppliers & Purchases
+            </a>
+        </aside>
+
+        <main class="col-md-10 main-content">
+
+            <div class="mb-4">
+                <h2 class="section-title">Supplier & Purchase Management</h2>
+                <p class="text-secondary">
+                    Manage suppliers, record purchases, and update inventory.
+                </p>
+            </div>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert
+                            {% if category == 'success' %}
+                                alert-success
+                            {% else %}
+                                alert-danger
+                            {% endif %}
+                            alert-dismissible fade show">
+
+                            {{ message }}
+
+                            <button
+                                type="button"
+                                class="btn-close"
+                                data-bs-dismiss="alert"
+                            ></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <!-- SUMMARY -->
+            <div class="row g-3 mb-4">
+
+                <div class="col-md-4">
+                    <div class="stat-card">
+                        <div class="text-secondary">Total Suppliers</div>
+                        <div class="stat-number">{{ supplier_count }}</div>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="stat-card">
+                        <div class="text-secondary">Total Purchases</div>
+                        <div class="stat-number">
+                            ₹{{ "%.2f"|format(total_purchases) }}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="stat-card">
+                        <div class="text-secondary">Supplier Balance Due</div>
+                        <div class="stat-number text-danger">
+                            ₹{{ "%.2f"|format(outstanding_balance) }}
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- ADD SUPPLIER -->
+            <div class="panel mb-4">
+
+                <h4 class="section-title mb-3">🚚 Add New Supplier</h4>
+
+                <form action="{{ url_for('add_supplier') }}" method="POST">
+
+                    <div class="row g-3">
+
+                        <div class="col-md-3">
+                            <label class="form-label">Supplier Name *</label>
+                            <input
+                                class="form-control"
+                                name="name"
+                                maxlength="150"
+                                required
+                                placeholder="ABC Distributors"
+                            >
+                        </div>
+
+                        <div class="col-md-3">
+                            <label class="form-label">Phone Number</label>
+                            <input
+                                class="form-control"
+                                name="phone"
+                                maxlength="30"
+                                placeholder="Supplier phone"
+                            >
+                        </div>
+
+                        <div class="col-md-3">
+                            <label class="form-label">Email</label>
+                            <input
+                                class="form-control"
+                                name="email"
+                                type="email"
+                                maxlength="254"
+                                placeholder="supplier@example.com"
+                            >
+                        </div>
+
+                        <div class="col-md-3">
+                            <label class="form-label">Address</label>
+                            <input
+                                class="form-control"
+                                name="address"
+                                placeholder="Supplier address"
+                            >
+                        </div>
+
+                        <div class="col-12">
+                            <button class="btn primary-button px-4">
+                                + Save Supplier
+                            </button>
+                        </div>
+
+                    </div>
+                </form>
+
+            </div>
+
+            <!-- SUPPLIER LIST -->
+            <div class="panel mb-4">
+
+                <h4 class="section-title mb-3">Supplier Directory</h4>
+
+                <input
+                    id="supplierSearch"
+                    class="form-control mb-3"
+                    placeholder="Search supplier name or phone..."
+                >
+
+                <div class="table-responsive">
+
+                    <table class="table table-hover">
+
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Phone</th>
+                                <th>Email</th>
+                                <th>Address</th>
+                            </tr>
+                        </thead>
+
+                        <tbody id="supplierTable">
+
+                            {% for s in suppliers %}
+                                <tr
+                                    class="supplier-row"
+                                    data-search="{{ (s.name ~ ' ' ~ (s.phone or '') ~ ' ' ~ (s.email or ''))|lower }}"
+                                >
+                                    <td class="fw-bold">{{ s.name }}</td>
+                                    <td>{{ s.phone or "—" }}</td>
+                                    <td>{{ s.email or "—" }}</td>
+                                    <td>{{ s.address or "—" }}</td>
+                                </tr>
+                            {% else %}
+                                <tr>
+                                    <td colspan="4" class="text-center">
+                                        No suppliers added yet.
+                                    </td>
+                                </tr>
+                            {% endfor %}
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+            <!-- NEW PURCHASE -->
+            <div class="panel mb-4">
+
+                <h4 class="section-title mb-3">📦 Record New Purchase</h4>
+
+                <p class="text-secondary">
+                    Save a supplier purchase to increase the available stock
+                    automatically.
+                </p>
+
+                <form
+                    action="{{ url_for('create_purchase') }}"
+                    method="POST"
+                    id="purchaseForm"
+                >
+
+                    <div class="row g-3 mb-4">
+
+                        <div class="col-md-6">
+                            <label class="form-label">Select Supplier *</label>
+
+                            <select
+                                class="form-select"
+                                name="supplier_id"
+                                required
+                            >
+                                <option value="">Choose a supplier</option>
+
+                                {% for s in suppliers %}
+                                    <option value="{{ s.id }}">
+                                        {{ s.name }}
+                                    </option>
+                                {% endfor %}
+
+                            </select>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Amount Paid (₹) *</label>
+
+                            <input
+                                class="form-control"
+                                type="number"
+                                name="amount_paid"
+                                id="amountPaid"
+                                min="0"
+                                step="0.01"
+                                value="0"
+                                required
+                            >
+                        </div>
+
+                    </div>
+
+                    <div class="table-responsive">
+
+                        <table class="table">
+
+                            <thead>
+                                <tr>
+                                    <th>Product</th>
+                                    <th>Quantity</th>
+                                    <th>Purchase Price (₹)</th>
+                                    <th>Line Total</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+
+                            <tbody id="purchaseItems"></tbody>
+
+                        </table>
+
+                    </div>
+
+                    <button
+                        type="button"
+                        class="btn btn-outline-primary mb-3"
+                        id="addPurchaseItem"
+                    >
+                        + Add Product
+                    </button>
+
+                    <div class="row">
+
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Purchase Notes</label>
+
+                            <textarea
+                                class="form-control"
+                                name="notes"
+                                maxlength="1000"
+                                rows="3"
+                                placeholder="Invoice reference or other notes"
+                            ></textarea>
+                        </div>
+
+                        <div class="col-md-6 text-md-end">
+                            <h5>
+                                Purchase Total:
+                                <strong id="purchaseTotal">₹0.00</strong>
+                            </h5>
+
+                            <button class="btn primary-button btn-lg mt-3">
+                                Save Purchase & Update Stock
+                            </button>
+                        </div>
+
+                    </div>
+
+                </form>
+
+            </div>
+
+            <!-- PURCHASE HISTORY -->
+            <div class="panel">
+
+                <h4 class="section-title mb-3">📋 Purchase History</h4>
+
+                <div class="table-responsive">
+
+                    <table class="table table-hover">
+
+                        <thead>
+                            <tr>
+                                <th>Purchase Invoice</th>
+                                <th>Supplier</th>
+                                <th>Date</th>
+                                <th>Total</th>
+                                <th>Paid</th>
+                                <th>Balance Due</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+
+                            {% for p in purchases %}
+                                <tr>
+                                    <td class="fw-bold">
+                                        {{ p.invoice_number }}
+                                    </td>
+
+                                    <td>{{ p.supplier_name }}</td>
+
+                                    <td>{{ p.created_at }}</td>
+
+                                    <td>
+                                        ₹{{ "%.2f"|format(p.subtotal|float) }}
+                                    </td>
+
+                                    <td>
+                                        ₹{{ "%.2f"|format(p.amount_paid|float) }}
+                                    </td>
+
+                                    <td class="{% if p.balance_due|float > 0 %}text-danger fw-bold{% endif %}">
+                                        ₹{{ "%.2f"|format(p.balance_due|float) }}
+                                    </td>
+                                </tr>
+                            {% else %}
+                                <tr>
+                                    <td colspan="6" class="text-center">
+                                        No purchases recorded yet.
+                                    </td>
+                                </tr>
+                            {% endfor %}
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+        </main>
+
+    </div>
+</div>
+
+
+<script>
+    const products = {{ products|tojson }};
+
+    const purchaseItems = document.getElementById("purchaseItems");
+
+    function createPurchaseRow() {
+        const row = document.createElement("tr");
+
+        const productCell = document.createElement("td");
+        const productSelect = document.createElement("select");
+
+        productSelect.name = "product_id[]";
+        productSelect.className = "form-select";
+        productSelect.required = true;
+
+        const placeholder = document.createElement("option");
+        placeholder.value = "";
+        placeholder.textContent = "Choose product";
+
+        productSelect.appendChild(placeholder);
+
+        products.forEach(product => {
+            const option = document.createElement("option");
+
+            option.value = product.id;
+            option.textContent = product.name;
+
+            productSelect.appendChild(option);
+        });
+
+        productCell.appendChild(productSelect);
+
+        const quantityCell = document.createElement("td");
+        const quantityInput = document.createElement("input");
+
+        quantityInput.type = "number";
+        quantityInput.name = "quantity[]";
+        quantityInput.min = "1";
+        quantityInput.max = "1000000";
+        quantityInput.step = "1";
+        quantityInput.value = "1";
+        quantityInput.required = true;
+        quantityInput.className = "form-control";
+
+        quantityCell.appendChild(quantityInput);
+
+        const costCell = document.createElement("td");
+        const costInput = document.createElement("input");
+
+        costInput.type = "number";
+        costInput.name = "unit_cost[]";
+        costInput.min = "0";
+        costInput.step = "0.01";
+        costInput.required = true;
+        costInput.className = "form-control";
+
+        costCell.appendChild(costInput);
+
+        const totalCell = document.createElement("td");
+        totalCell.textContent = "₹0.00";
+
+        const removeCell = document.createElement("td");
+        const removeButton = document.createElement("button");
+
+        removeButton.type = "button";
+        removeButton.className = "btn btn-sm btn-outline-danger";
+        removeButton.textContent = "Remove";
+
+        removeButton.addEventListener("click", () => {
+            row.remove();
+            updatePurchaseTotal();
+        });
+
+        removeCell.appendChild(removeButton);
+
+        row.append(
+            productCell,
+            quantityCell,
+            costCell,
+            totalCell,
+            removeCell
+        );
+
+        function updateRowTotal() {
+            const quantity = Number(quantityInput.value);
+            const cost = Number(costInput.value);
+
+            const total = quantity * cost;
+
+            totalCell.textContent =
+                "₹" + (Number.isFinite(total) ? total : 0).toFixed(2);
+
+            updatePurchaseTotal();
+        }
+
+        productSelect.addEventListener("change", () => {
+            const selected = products.find(
+                p => String(p.id) === productSelect.value
+            );
+
+            if (selected && selected.purchase_price != null) {
+                costInput.value = Number(selected.purchase_price).toFixed(2);
+            }
+
+            updateRowTotal();
+        });
+
+        quantityInput.addEventListener("input", updateRowTotal);
+        costInput.addEventListener("input", updateRowTotal);
+
+        purchaseItems.appendChild(row);
+    }
+
+    function updatePurchaseTotal() {
+        let total = 0;
+
+        purchaseItems.querySelectorAll("tr").forEach(row => {
+            const quantity = Number(
+                row.querySelector('[name="quantity[]"]').value
+            );
+
+            const cost = Number(
+                row.querySelector('[name="unit_cost[]"]').value
+            );
+
+            if (
+                Number.isFinite(quantity) &&
+                Number.isFinite(cost) &&
+                quantity > 0 &&
+                cost >= 0
+            ) {
+                total += quantity * cost;
+            }
+        });
+
+        document.getElementById("purchaseTotal").textContent =
+            "₹" + total.toFixed(2);
+
+        document.getElementById("amountPaid").max = total.toFixed(2);
+    }
+
+    document
+        .getElementById("addPurchaseItem")
+        .addEventListener("click", createPurchaseRow);
+
+    document
+        .getElementById("supplierSearch")
+        .addEventListener("input", event => {
+            const search = event.target.value.toLowerCase().trim();
+
+            document.querySelectorAll(".supplier-row").forEach(row => {
+                row.hidden = !row.dataset.search.includes(search);
+            });
+        });
+
+    document
+        .getElementById("purchaseForm")
+        .addEventListener("submit", event => {
+            if (purchaseItems.children.length === 0) {
+                event.preventDefault();
+                alert("Please add at least one product.");
+                return;
+            }
+
+            const total = Array.from(purchaseItems.querySelectorAll("tr"))
+                .reduce((sum, row) => {
+                    const quantity = Number(
+                        row.querySelector('[name="quantity[]"]').value
+                    );
+
+                    const cost = Number(
+                        row.querySelector('[name="unit_cost[]"]').value
+                    );
+
+                    return sum + quantity * cost;
+                }, 0);
+
+            const paid = Number(
+                document.getElementById("amountPaid").value
+            );
+
+            if (!Number.isFinite(paid) || paid < 0 || paid > total) {
+                event.preventDefault();
+
+                alert(
+                    "Amount paid must be between ₹0 and the purchase total."
+                );
+            }
+        });
+
+    createPurchaseRow();
+</script>
+
+</body>
+</html>

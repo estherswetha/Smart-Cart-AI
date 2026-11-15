@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard | SmartCart AI{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <div class="dashboard-heading">
+        <div>
+            <h1>Dashboard</h1>
+            <p>Welcome to your smart shopping management system.</p>
+        </div>
+
+        <span class="role-badge">
+            {{ current_user.role|capitalize }}
+        </span>
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-card">
+            <span class="stat-icon">📦</span>
+            <h3>Total Products</h3>
+            <p>{{ data.product_count }}</p>
+        </div>
+
+        <div class="stat-card">
+            <span class="stat-icon">🛍️</span>
+            <h3>Units in Stock</h3>
+            <p>{{ data.stock_count }}</p>
+        </div>
+
+        <div class="stat-card">
+            <span class="stat-icon">⚠️</span>
+            <h3>Low-Stock Products</h3>
+            <p>{{ data.low_stock_count }}</p>
+        </div>
+
+        <div class="stat-card">
+            <span class="stat-icon">💰</span>
+            <h3>Today's Sales</h3>
+            <p>₹{{ "%.2f"|format(data.today_sales) }}</p>
+        </div>
+    </div>
+
+    <section class="quick-actions">
+        <h2>Quick Actions</h2>
+
+        <p>
+            Your dashboard is connected to the database. Next, we'll
+            connect the product management and billing pages.
+        </p>
+    </section>
+</div>
+{% endblock %}
